@@ -2,14 +2,16 @@
 library(tidyverse)
 
 ####create lists of each genotype, then combine all into one list#### 
-list.Snap25<-list(Snap25s, Snap25r1, Snap25r2) %>% set_names("Snap25r1", "Snap25r2","Snap25S")
-list.Vglu2<-list(Vglu2s ,Vglu2r1, Vglu2r2, Vglu2r3, Vglu2r4) %>% set_names("Vglu2r1", "Vglu2r2", "Vglu2r3", "Vglu2r4","Vglu2S")
+list.Snap25<-list(Snap25r1, Snap25r2, Snap25s) %>% set_names("Snap25r1", "Snap25r2","Snap25s")
+list.Vglu2<-list(Vglu2r1,Vglu2r2, Vglu2r3, Vglu2r4, Vglu2s) %>% set_names("Vglu2r1", "Vglu2r2", "Vglu2r3", "Vglu2r4","Vglu2s")
 list.Vglu1<- list(Vglu1r1, Vglu1r2, Vglu1r3) %>% set_names( "Vglu1r1", "Vglu1r2", "Vglu1r3")
-list.Vgat<-list(VgatS, Vgat0.3, Vgat1.0)%>% set_names("Vgat0.3", "Vgat1.0","VgatS")
+list.Vgat<-list(Vgat0.3, Vgat1.0, VgatS)%>% set_names("Vgat0.3", "Vgat1.0","VgatS")
 list.Dbh<-list(DbhR1D1, DbhR1D2, DbhR2D1, DbhR2D2, DbhR3D1, DbhR3D2) %>% set_names("DbhR1D1", "DbhR1D2", "DbhR2D1", "DbhR2D2", "DbhR3D1", "DbhR3D2")
 list.Control<-list(Control0.3, Control1.0,ControlSaline) %>% set_names("Control0.3", "Control1.0", "ControlS")
 masterList<- list(list.Snap25, list.Vglu2, list.Vglu1, list.Vgat, list.Dbh, list.Control)%>% 
-  set_names("list.Snap25", "list.Vglu2", "list.Vglu1", "list.Vgat", "list.Dbh", "list.Control") 
+set_names("list.Snap25", "list.Vglu2", "list.Vglu1", "list.Vgat", "list.Dbh", "list.Control") 
+
+
 
 ####Grabbing counts for all trials#### 
     
@@ -28,7 +30,6 @@ for (i in seq_along(masterList)){
     masterList[[i]][[j]]<-masterList[[i]][[j]]%>%mutate(Genotype=genoName)
     }
 }
-
 ####add column indicating what treatment####
   #snap25
   masterList[[1]][[1]]$Dose<-c(1,1,1,1,1,0.3,0.3,0.3,0.3,0.3)
@@ -50,9 +51,9 @@ for (i in seq_along(masterList)){
   masterList[[3]][[3]]$Dose<- c(1,1,0,0,0.3,1,1,0,0,0.3)
   
   #Vgat
+  masterList[[4]][[1]]<- mutate(masterList[[4]][[1]], Dose=0.3)
+  masterList[[4]][[2]]<- mutate(masterList[[4]][[2]], Dose=1)
   masterList[[4]][[3]]<- mutate(masterList[[4]][[3]], Dose=0)
-  masterList[[4]][[2]]<- mutate(masterList[[4]][[2]], Dose=0.3)
-  masterList[[4]][[1]]<- mutate(masterList[[4]][[1]], Dose=1)
   
   #Dbh
   d1<-c(0,0,1,0,0,0.3,0.3,1)
@@ -75,19 +76,18 @@ for (i in seq_along(masterList)){
     masterList[[6]][[i]]$Dose<-list2.dose[[i]]
   }
   
-  
 ####normalize to Saline####
   #standardize genotypes that don't have one saline trial
     #Vglu1
       #combine df's
-      Vglu1Obs<-rbind(masterList[[3]][[1]],masterList[[3]][[2]],masterList[[3]][[3]] )
+      Vglu1Obs<-rbind(masterList[[3]][[1]],masterList[[3]][[2]],masterList[[3]][[3]])
       #split up into different treatments
-      masterList[[3]][[3]]<- Vglu1Obs%>%filter(Dose==0)
-        names(masterList[[3]])[[3]]<-"Vglu1SObs"
-      masterList[[3]][[2]]<- Vglu1Obs%>%filter(Dose==0.3)
-        names(masterList[[3]])[[2]]<-"Vglu10.3Obs"
-      masterList[[3]][[1]]<-Vglu1Obs%>% filter(Dose==1.0)
-        names(masterList[[3]])[[1]]<-"Vglu1.0Obs"
+      masterList[[3]][[1]]<- Vglu1Obs%>%filter(Dose==0.3)
+        names(masterList[[3]])[[1]]<-"Vglu10.3Obs"
+      masterList[[3]][[2]]<- Vglu1Obs%>%filter(Dose==1.0)
+        names(masterList[[3]])[[2]]<-"Vglu11.0Obs"
+      masterList[[3]][[3]]<-Vglu1Obs%>% filter(Dose==0)
+        names(masterList[[3]])[[3]]<-"VglusObs"
       
     #Dbh
       #combine df's
@@ -101,32 +101,45 @@ for (i in seq_along(masterList)){
           DbhObs<-do.call(rbind, bindList)
         }
         
+        #remove extra objects from list after all has been consolidated 
         for(i in 6:4){
           masterList[[5]][[i]]<-NULL
         }
       #Split up into different treatments
-        masterList[[5]][[3]]<- filter(DbhObs, Dose==0)
-          names(masterList[[5]])[[1]]<-"DbhSObs"
-        masterList[[5]][[2]]<- filter(DbhObs, Dose==0.3)
-          names(masterList[[5]])[[2]]<-"Dbh0.3Obs"
-        masterList[[5]][[1]]<-filter(DbhObs, Dose==1)
-          names(masterList[[5]])[[3]]<- "Dbh1.0Obs"
+        masterList[[5]][[1]]<- filter(DbhObs, Dose==0.3)
+          names(masterList[[5]])[[1]]<-"Dbh0.3Obs"
+        masterList[[5]][[2]]<- filter(DbhObs, Dose==1.0)
+          names(masterList[[5]])[[2]]<-"Dbh1.0Obs"
+        masterList[[5]][[3]]<-filter(DbhObs, Dose==0)
+          names(masterList[[5]])[[3]]<- "DbhSObs"
+        
           
   #Standardizing Loop
-  for(i in seq_along(masterList)){
-    for(j in seq_along(masterList[[i]])){
-    masterList[[i]][[j]]$Count<-(masterList[[i]][[j]]$Count)/(masterList[[i]][[length(masterList[[i]])]]$Count)
+  #for(i in seq_along(masterList)){
+    #for(j in seq_along(masterList[[i]])){
+   #masterList[[i]][[j]]$Count<-(masterList[[i]][[j]]$Count)/(masterList[[i]][[length(masterList[[i]])]]$Count)
 
-    }
-  }
-
+    #}
+# }
 #combine all lists into one master list
 masterList<-do.call(c, masterList)
   
 #combine all dataframes in list into one master dataframe
 masterDf<-do.call(rbind, masterList) 
-
 #remove row names
 rownames(masterDf)<-NULL
+
+#coerce dose and variable to a factor
+masterDf[["Dose"]]<-as.factor(masterDf[["Dose"]])
+masterDf[["Genotype"]]<-as.factor(masterDf[["Genotype"]])
+#take out vglut trials with the 0.03 and 0.1 doses
+masterDf<- filter(masterDf, Dose!=0.1, Dose!=0.03)
+
+
+#export to folder
+write.csv(masterDf, "dexBeamBreak.csv")
+
+#remove constituent lists now that they are all in masterlist
+rm(list=setdiff(ls(), c("masterDf", "CNOr1", "CNOr2")))
 
   

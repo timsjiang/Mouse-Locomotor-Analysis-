@@ -1,7 +1,9 @@
-options(scipen=10)
+options(scipen=100)
 rm(list=ls())
 
 library(tidyverse)
+#load individual datasets to test
+#testDf<- read.csv("/Users/timsjiang/Documents/RProjects/Dex Exposures/Dex Csv Data/Vgat0.3.csv") 
 #DATACLEANING FUNCTION
 dataClean<-function(x){
   #load data
@@ -36,7 +38,7 @@ dataClean<-function(x){
   finalDf<-select(finalDf, Experiment, Subject, Time, time_minutes, Coordinate)
   finalDf<-filter(finalDf, time_minutes<=60)
   return(finalDf)
-
+  
 }
 
 #load data via loop
@@ -57,13 +59,15 @@ for(i in 1:length(allData)){
 #special circumstance cleaning
 
 #Dead Vgats
-VgatS<-filter(VgatS, Subject>3)
-Vgat0.3<- filter(Vgat0.3, Subject>2)
-Vgat1.0<-filter(Vgat1.0, Subject>3)
+VgatS<-filter(VgatS, Subject<8)
+Vgat1.0<-filter(Vgat1.0, Subject>1, Subject<8)
 
 #Dead Dbh's
-DbhR1D1<-filter(DbhR2D1, Subject!=3, Subject!=4)
+DbhR1D1<-filter(DbhR1D1, Subject!=3, Subject!=4)
 DbhR2D1<-filter(DbhR2D1, Subject!=3, Subject!=4)
 
 #Dead Controls
 Control0.3<-filter(Control0.3, Subject<6)
+
+
+
